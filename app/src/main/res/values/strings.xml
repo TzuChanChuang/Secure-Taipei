@@ -11,9 +11,6 @@
 
     <string name="google_play_service_missing">裝置沒有安裝Google Play服務</string>
 
-    <string name="str_btn_find">Search</string>
-    <string name="hnt_et_location">Enter location</string>
-
     <string name="text_search">Enter location</string>
     <string name="search_title">Search</string>
 </resources>

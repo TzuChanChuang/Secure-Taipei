@@ -72,10 +72,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
     //////Move to current location////
     private int CurrentLocationStart = 0;
 
-    ///////For Search View//////
-    //private SearchView mSearchView;
-    //private TextView mStatusView;
-
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -247,36 +243,8 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         // Getting a reference to the map
         mMap = mapFragment.getMap();
 
-        // Getting reference to btn_find of the layout activity_main
-        Button btn_find = (Button) findViewById(R.id.btn_find);
-
-        // Defining button click event listener for the find button
-        View.OnClickListener findClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Getting reference to EditText to get the user input location
-                EditText etLocation = (EditText) findViewById(R.id.et_location);
-
-                // Getting user input location
-                String location = etLocation.getText().toString();
-
-                if(location!=null && !location.equals("")){
-                    new GeocoderTask().execute(location);
-                }
-            }
-        };
-
-        // Setting button click event listener for the find button
-        btn_find.setOnClickListener(findClickListener);
-
-
-
         //////Image Button--CurrentLocation
         SetupImageButton1_CurrentLocation();
-
-
-        //////////////
-        //mStatusView = (TextView) findViewById(R.id.status);
 
 
     }
@@ -499,19 +467,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         // Inflate the menu; this adds items to the action bar if it is present.
         MenuInflater inflater =getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
-        /*
-        MenuItem searchItem = menu.findItem(R.id.search);
-        mSearchView = (SearchView) searchItem.getActionView();
-        setupSearchView(searchItem);
-        */
-        /*SearchManager searchManager =
-                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView =
-                (SearchView) menu.findItem(R.id.action_search).getActionView();
-        searchView.setSearchableInfo(
-                searchManager.getSearchableInfo(getComponentName()));
-        */
-
 
         /////
         try {
@@ -531,37 +486,8 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-
-        /*if(id== R.id.action_search){
-
-            if(location!=null && !location.equals("")){
-                new GeocoderTask().execute(location);
-            }
-
-            return true;
-        }*/
-
         return super.onOptionsItemSelected(item);
     }
-    /*
-    @Override
-    protected void onNewIntent(Intent intent) {
-        handleIntent(intent);
-    }
-
-    private void handleIntent(Intent intent) {
-
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            //use the query to search
-            if(query!=null && !query.equals("")){
-                new GeocoderTask().execute(query);
-            }
-        }
-    }
-*/
-    /////////
-
 
 
     final private android.support.v7.widget.SearchView.OnQueryTextListener queryListener = new android.support.v7.widget.SearchView.OnQueryTextListener() {
