@@ -3,11 +3,9 @@ package com.example.alicechuang.safetymap;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.SearchManager;
-import android.app.SearchableInfo;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.AsyncTask;
@@ -19,7 +17,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -36,21 +33,29 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -72,6 +77,15 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
     //////Move to current location////
     private int CurrentLocationStart = 0;
 
+
+    ////////////directions/////
+    LatLng NTHU1 = new LatLng(24.7808773, 121.0263253);
+    LatLng NTHU2 = new LatLng(24.803618, 120.978885);
+
+
+    ////////////try3///////////
+    ArrayList<LatLng> markerPoints;
+    ////////////try3///////////
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -134,18 +148,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
 
         }
 
-        // 設定目前位置的標記--------------加上現在位置mark
-        /*
-        if (currentMarker == null) {
-            currentMarker = mMap.addMarker(new MarkerOptions().position(latLng));
-        }
-        else{
-            currentMarker.setPosition(latLng);
-        }
-        */
-
-        // 移動地圖到目前的位置
-       //moveMap(latLng);
     }
 
     // 移動地圖到參數指定的位置
@@ -202,7 +204,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
 
         initActionBar();
 
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -247,7 +248,207 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         SetupImageButton1_CurrentLocation();
 
 
+        /////////////try3////////////////
+        // Initializing
+        markerPoints = new ArrayList<LatLng>();
+        markerPoints.add(NTHU1);
+        markerPoints.add(NTHU2);
+
+        // Getting reference to SupportMapFragment of the activity_main
+        SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+
+        // Getting Map for the SupportMapFragment
+        mMap = fm.getMap();
+
+        if(mMap!=null){
+
+            // Enable MyLocation Button in the Map
+            mMap.setMyLocationEnabled(true);
+
+            for(int i=0; i<markerPoints.size();i++) {
+                // Creating MarkerOptions
+                MarkerOptions options = new MarkerOptions();
+
+                // Setting the position of the marker
+                if(i==0){
+                    options.position(NTHU1);
+                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                }
+                if(i==1){
+                    options.position(NTHU2);
+                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+                }
+                mMap.addMarker(options);
+            }
+            LatLng origin = markerPoints.get(0);
+            LatLng dest = markerPoints.get(1);
+
+            // Getting URL to the Google Directions API
+            String url = getDirectionsUrl(origin, dest);
+
+            DownloadTask downloadTask = new DownloadTask();
+
+            // Start downloading json data from Google Directions API
+            downloadTask.execute(url);
+
+
+        }
+        /////////////try3////////////////
     }
+    ////////////////try3//////////////
+    private String getDirectionsUrl(LatLng origin,LatLng dest){
+
+        // Origin of route
+        String str_origin = "origin="+origin.latitude+","+origin.longitude;
+
+        // Destination of route
+        String str_dest = "destination="+dest.latitude+","+dest.longitude;
+
+        // Sensor enabled
+        String sensor = "sensor=false";
+
+        // Building the parameters to the web service
+        String parameters = str_origin+"&"+str_dest+"&"+sensor;
+
+        // Output format
+        String output = "json";
+
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
+
+        return url;
+    }
+    /** A method to download json data from url */
+    private String downloadUrl(String strUrl) throws IOException{
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try{
+            URL url = new URL(strUrl);
+
+            // Creating an http connection to communicate with url
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while( ( line = br.readLine()) != null){
+                sb.append(line);
+            }
+
+            data = sb.toString();
+
+            br.close();
+
+        }catch(Exception e){
+            //Log.d("Exception while downloading url", e.toString());
+        }finally{
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
+
+    // Fetches data from url passed
+    private class DownloadTask extends AsyncTask<String, Void, String>{
+
+        // Downloading data in non-ui thread
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try{
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+            }catch(Exception e){
+                Log.d("Background Task",e.toString());
+            }
+            return data;
+        }
+
+        // Executes in UI thread, after the execution of
+        // doInBackground()
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+        }
+    }
+
+    /** A class to parse the Google Places in JSON format */
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>> >{
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try{
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        // Executes in UI thread, after the parsing process
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = null;
+            MarkerOptions markerOptions = new MarkerOptions();
+
+            // Traversing through all the routes
+            for(int i=0;i<result.size();i++){
+                points = new ArrayList<LatLng>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for(int j=0;j<path.size();j++){
+                    HashMap<String,String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(50);
+                lineOptions.color(0x4DFF0000);
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            mMap.addPolyline(lineOptions);
+        }
+    }
+
+    ////////////////try3//////////////
 
     public void SetupImageButton1_CurrentLocation(){
         ImageButton CurrentLocation =(ImageButton)findViewById(R.id.CurrentLocation);

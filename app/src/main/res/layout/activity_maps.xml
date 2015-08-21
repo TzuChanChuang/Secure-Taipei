@@ -67,7 +67,7 @@
                     android:layout_gravity="right"
                     android:src="@drawable/current_location"
                     android:scaleType="fitCenter"
-                    android:padding="8dp"
+                    android:padding="5dp"
                     android:background="@android:color/transparent"/>
             </LinearLayout>
 
