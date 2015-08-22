@@ -3,6 +3,9 @@ package com.example.alicechuang.safetymap;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -101,6 +104,7 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
 
             if(minutes==1){
                 startTime = System.currentTimeMillis();
+                Notification();
             }
         }
     };
@@ -283,8 +287,29 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         startTime = System.currentTimeMillis();
         timerHandler.postDelayed(timerRunnable, 0);
 
+
+
     }
 
+    /////////add notification///
+    public void Notification(){
+        Intent intent = new Intent(this, NotificationReceiverActivity.class);
+        PendingIntent pIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), intent, 0);
+
+        Notification noti = new Notification.Builder(this)
+                .setContentTitle("New mail from " + "test@gmail.com")
+                .setContentText("Subject").setSmallIcon(R.drawable.ic_launcher)
+                .setContentIntent(pIntent)
+                .addAction(R.drawable.ic_launcher, "Call", pIntent)
+                .addAction(R.drawable.ic_launcher, "More", pIntent)
+                .setVibrate(new long[] { 200,200,200,200})
+                .addAction(R.drawable.ic_launcher, "And more", pIntent).build();
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        // hide the notification after its selected
+        noti.flags |= Notification.FLAG_AUTO_CANCEL;
+
+        notificationManager.notify(0, noti);
+    }
 
 
     public void SetupImageButton1_CurrentLocation() {
