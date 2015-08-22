@@ -45,6 +45,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
@@ -54,6 +63,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,7 +87,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
     //////Move to current location////
     private int CurrentLocationStart = 0;
 
-
     ////////////directions/////
     LatLng NTHU1 = new LatLng(24.7808773, 121.0263253);
     LatLng NTHU2 = new LatLng(24.803618, 120.978885);
@@ -86,6 +95,8 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
     ////////////try3///////////
     ArrayList<LatLng> markerPoints;
     ////////////try3///////////
+
+
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -247,6 +258,26 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         //////Image Button--CurrentLocation
         SetupImageButton1_CurrentLocation();
 
+/*
+        MySql mysql = new MySql();
+        //DBConnectionDemo db= new DBConnectionDemo();
+        try {
+            mysql.connectSql();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        */
+
+        ////php
+        android.support.v7.app.ActionBar status = getSupportActionBar();
+        String username= "test";
+        String password= "123456";
+        int Post=1;
+        new SigninActivity(Post,status).execute(username, password);
 
         /////////////try3////////////////
         // Initializing
@@ -280,8 +311,11 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
                 }
                 mMap.addMarker(options);
             }
-            LatLng origin = markerPoints.get(0);
-            LatLng dest = markerPoints.get(1);
+            //LatLng origin = markerPoints.get(0);
+            //LatLng dest = markerPoints.get(1);
+
+            LatLng origin = NTHU1;
+            LatLng dest = NTHU2;
 
             // Getting URL to the Google Directions API
             String url = getDirectionsUrl(origin, dest);
@@ -293,8 +327,11 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
 
 
         }
-        /////////////try3////////////////
+
+
+
     }
+
     ////////////////try3//////////////
     private String getDirectionsUrl(LatLng origin,LatLng dest){
 
@@ -439,7 +476,7 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
 
                 // Adding all the points in the route to LineOptions
                 lineOptions.addAll(points);
-                lineOptions.width(50);
+                lineOptions.width(20);
                 lineOptions.color(0x4DFF0000);
             }
 
