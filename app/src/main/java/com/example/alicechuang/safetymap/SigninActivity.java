@@ -102,6 +102,6 @@ public class SigninActivity  extends AsyncTask<String,Void,String>{
 
     @Override
     protected void onPostExecute(String result){
-        this.status.setTitle("Login Successful");
+        //this.status.setTitle("Login Successful");
     }
 }
