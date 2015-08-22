@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
@@ -22,6 +23,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -42,30 +45,8 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.w3c.dom.Document;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -96,6 +77,33 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
     ArrayList<LatLng> markerPoints;
     ////////////try3///////////
 
+    //////////timer
+    long startTime = 0;
+    long millis;
+    int seconds;
+    int minutes;
+    //runs without a timer by reposting this handler at the end of the runnable
+    Handler timerHandler = new Handler();
+    Runnable timerRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+            millis = System.currentTimeMillis() - startTime;
+            seconds = (int) (millis / 1000);
+            minutes = seconds / 60;
+            seconds = seconds % 60;
+
+            android.support.v7.app.ActionBar show= getSupportActionBar();
+            show.setTitle(minutes+":"+seconds);
+            //timerTextView.setText(String.format("%d:%02d", minutes, seconds));
+
+            timerHandler.postDelayed(this, 500);
+
+            if(minutes==1){
+                startTime = System.currentTimeMillis();
+            }
+        }
+    };
 
 
     @Override
@@ -138,7 +146,7 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         }
     }
 
-    // LocationListener
+    // LocationListener--Location now
     @Override
     public void onLocationChanged(Location location) {
         // 位置改變
@@ -158,6 +166,11 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
             CurrentLocationStart = 0;
 
         }
+        Circle circle = mMap.addCircle(new CircleOptions()
+                .center(latLng)
+                .radius(300)    //meters
+                .strokeColor(Color.BLACK)
+                .fillColor(Color.RED));
 
     }
 
@@ -258,19 +271,6 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         //////Image Button--CurrentLocation
         SetupImageButton1_CurrentLocation();
 
-/*
-        MySql mysql = new MySql();
-        //DBConnectionDemo db= new DBConnectionDemo();
-        try {
-            mysql.connectSql();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        */
 
         ////php
         android.support.v7.app.ActionBar status = getSupportActionBar();
@@ -279,216 +279,16 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
         int Post=1;
         new SigninActivity(Post,status).execute(username, password);
 
-        /////////////try3////////////////
-        // Initializing
-        markerPoints = new ArrayList<LatLng>();
-        markerPoints.add(NTHU1);
-        markerPoints.add(NTHU2);
-
-        // Getting reference to SupportMapFragment of the activity_main
-        SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
-
-        // Getting Map for the SupportMapFragment
-        mMap = fm.getMap();
-
-        if(mMap!=null){
-
-            // Enable MyLocation Button in the Map
-            mMap.setMyLocationEnabled(true);
-
-            for(int i=0; i<markerPoints.size();i++) {
-                // Creating MarkerOptions
-                MarkerOptions options = new MarkerOptions();
-
-                // Setting the position of the marker
-                if(i==0){
-                    options.position(NTHU1);
-                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-                }
-                if(i==1){
-                    options.position(NTHU2);
-                    options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-                }
-                mMap.addMarker(options);
-            }
-            //LatLng origin = markerPoints.get(0);
-            //LatLng dest = markerPoints.get(1);
-
-            LatLng origin = NTHU1;
-            LatLng dest = NTHU2;
-
-            // Getting URL to the Google Directions API
-            String url = getDirectionsUrl(origin, dest);
-
-            DownloadTask downloadTask = new DownloadTask();
-
-            // Start downloading json data from Google Directions API
-            downloadTask.execute(url);
-
-
-        }
-
-
+        ////timer
+        startTime = System.currentTimeMillis();
+        timerHandler.postDelayed(timerRunnable, 0);
 
     }
 
-    ////////////////try3//////////////
-    private String getDirectionsUrl(LatLng origin,LatLng dest){
 
-        // Origin of route
-        String str_origin = "origin="+origin.latitude+","+origin.longitude;
 
-        // Destination of route
-        String str_dest = "destination="+dest.latitude+","+dest.longitude;
-
-        // Sensor enabled
-        String sensor = "sensor=false";
-
-        // Building the parameters to the web service
-        String parameters = str_origin+"&"+str_dest+"&"+sensor;
-
-        // Output format
-        String output = "json";
-
-        // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/"+output+"?"+parameters;
-
-        return url;
-    }
-    /** A method to download json data from url */
-    private String downloadUrl(String strUrl) throws IOException{
-        String data = "";
-        InputStream iStream = null;
-        HttpURLConnection urlConnection = null;
-        try{
-            URL url = new URL(strUrl);
-
-            // Creating an http connection to communicate with url
-            urlConnection = (HttpURLConnection) url.openConnection();
-
-            // Connecting to url
-            urlConnection.connect();
-
-            // Reading data from url
-            iStream = urlConnection.getInputStream();
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
-
-            StringBuffer sb = new StringBuffer();
-
-            String line = "";
-            while( ( line = br.readLine()) != null){
-                sb.append(line);
-            }
-
-            data = sb.toString();
-
-            br.close();
-
-        }catch(Exception e){
-            //Log.d("Exception while downloading url", e.toString());
-        }finally{
-            iStream.close();
-            urlConnection.disconnect();
-        }
-        return data;
-    }
-
-    // Fetches data from url passed
-    private class DownloadTask extends AsyncTask<String, Void, String>{
-
-        // Downloading data in non-ui thread
-        @Override
-        protected String doInBackground(String... url) {
-
-            // For storing data from web service
-            String data = "";
-
-            try{
-                // Fetching the data from web service
-                data = downloadUrl(url[0]);
-            }catch(Exception e){
-                Log.d("Background Task",e.toString());
-            }
-            return data;
-        }
-
-        // Executes in UI thread, after the execution of
-        // doInBackground()
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-
-            ParserTask parserTask = new ParserTask();
-
-            // Invokes the thread for parsing the JSON data
-            parserTask.execute(result);
-        }
-    }
-
-    /** A class to parse the Google Places in JSON format */
-    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>> >{
-
-        // Parsing the data in non-ui thread
-        @Override
-        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
-
-            JSONObject jObject;
-            List<List<HashMap<String, String>>> routes = null;
-
-            try{
-                jObject = new JSONObject(jsonData[0]);
-                DirectionsJSONParser parser = new DirectionsJSONParser();
-
-                // Starts parsing data
-                routes = parser.parse(jObject);
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-            return routes;
-        }
-
-        // Executes in UI thread, after the parsing process
-        @Override
-        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
-            ArrayList<LatLng> points = null;
-            PolylineOptions lineOptions = null;
-            MarkerOptions markerOptions = new MarkerOptions();
-
-            // Traversing through all the routes
-            for(int i=0;i<result.size();i++){
-                points = new ArrayList<LatLng>();
-                lineOptions = new PolylineOptions();
-
-                // Fetching i-th route
-                List<HashMap<String, String>> path = result.get(i);
-
-                // Fetching all the points in i-th route
-                for(int j=0;j<path.size();j++){
-                    HashMap<String,String> point = path.get(j);
-
-                    double lat = Double.parseDouble(point.get("lat"));
-                    double lng = Double.parseDouble(point.get("lng"));
-                    LatLng position = new LatLng(lat, lng);
-
-                    points.add(position);
-                }
-
-                // Adding all the points in the route to LineOptions
-                lineOptions.addAll(points);
-                lineOptions.width(20);
-                lineOptions.color(0x4DFF0000);
-            }
-
-            // Drawing polyline in the Google Map for the i-th route
-            mMap.addPolyline(lineOptions);
-        }
-    }
-
-    ////////////////try3//////////////
-
-    public void SetupImageButton1_CurrentLocation(){
-        ImageButton CurrentLocation =(ImageButton)findViewById(R.id.CurrentLocation);
+    public void SetupImageButton1_CurrentLocation() {
+        ImageButton CurrentLocation = (ImageButton) findViewById(R.id.CurrentLocation);
         CurrentLocation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -517,6 +317,9 @@ public class MapsActivity extends ActionBarActivity implements ConnectionCallbac
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     googleApiClient, this);
         }
+
+        //timer
+        //timerHandler.removeCallbacks(timerRunnable);
     }
 
     @Override
